@@ -1,0 +1,8 @@
+.idea
+
+.terraform
+.terraform.lock.hcl
+**/backend.tf
+**/provider.tf
+**/locals.tf
+**/generated.tf
