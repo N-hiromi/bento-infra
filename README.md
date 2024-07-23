@@ -1,38 +1,9 @@
-# tidy-terraform
+for tidy infra
 
-dev環境については、PR作成で `terraform plan`、main ブランチへのマージで `terraform apply` が実行されます。
-prod環境については、ローカルで実行する必要があります。
+using terraform and terragrunt
 
-## ローカルで実行する場合のコマンド
+install terragrunt
+https://dev.classmethod.jp/articles/terragrunt-makes-your-terraform-backend-code-dry/
 
-### 開発環境用
-
-**plan**
-
-```
-terraform -chdir=envs/dev init
-terraform -chdir=envs/dev plan
-```
-
-**apply**
-
-```
-terraform -chdir=envs/dev init
-terraform -chdir=envs/dev apply
-```
-
-### 本番環境用
-
-**plan**
-
-```
-terraform -chdir=envs/prod init
-terraform -chdir=envs/prod plan
-```
-
-**apply**
-
-```
-terraform -chdir=envs/prod init
-terraform -chdir=envs/prod apply
-```
+set terraform formatter to intellij
+https://qiita.com/wMETAw/items/d13c30420727f0c57dcc
