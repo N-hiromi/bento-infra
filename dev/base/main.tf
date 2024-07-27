@@ -1,5 +1,6 @@
 ################# vpc #################
 module "vpc" {
+  version = "~> 5.0"
   source                = "terraform-aws-modules/vpc/aws"
   name                  = local.project_key
   cidr                  = "10.0.0.0/16"
@@ -44,28 +45,6 @@ module "app-sg" {
       to_port                  = 80
       protocol                 = "TCP"
       source_security_group_id = module.alb-sg.security_group_id
-    }
-  ]
-  egress_with_cidr_blocks = [{
-    description = "to all"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = "0.0.0.0/0"
-  }]
-}
-
-module "bastion-sg" {
-  source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-bastion-sg"
-  vpc_id = module.vpc.vpc_id
-  ingress_with_cidr_blocks = [
-    {
-      description = "ssh"
-      from_port   = 22
-      to_port     = 22
-      protocol    = "TCP"
-      cidr_blocks = "0.0.0.0/0"
     }
   ]
   egress_with_cidr_blocks = [{
