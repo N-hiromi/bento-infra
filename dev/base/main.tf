@@ -34,9 +34,9 @@ module "alb-sg" {
   }]
 }
 
-module "app-sg" {
+module "api-sg" {
   source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-app-sg"
+  name   = "${local.project_key}-api-sg"
   vpc_id = module.vpc.vpc_id
   ingress_with_source_security_group_id = [
     {

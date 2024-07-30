@@ -141,10 +141,7 @@ module "log" {
   acl    = "private"
 }
 
-################# ecr #################
-resource "aws_ecr_repository" "this" {
-  name = "${local.project_key}-app"
-}
+
 
 ################# key pair #################
 module "key_pair" {
