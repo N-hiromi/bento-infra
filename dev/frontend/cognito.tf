@@ -20,9 +20,6 @@ resource "aws_cognito_user_pool" "user_pool" {
   #   サインイン必須属性
   alias_attributes = ["preferred_username", "email"]
 
-  #   ユーザ名の属性を指定
-  username_attributes = ["preferred_username"]
-
   email_configuration {
     #     TODO 開発中は一旦cognitoから送信するようにする。
     email_sending_account = "COGNITO_DEFAULT"
@@ -51,21 +48,10 @@ resource "aws_cognito_user_pool" "user_pool" {
   }
 
   #   TODO SESを使用している場合だけ設定が有効になる
-  #   メールテンプレートの設定
-  invite_message_template {
-    email_message = "Your username is {username} and temporary password is {####}."
-    email_subject = "Your temporary password"
-  }
-
-  #   TODO SESを使用している場合だけ設定が有効になる
   verification_message_template {
     default_email_option = "CONFIRM_WITH_CODE"
     email_message        = "Your verification code is {####}."
     email_subject        = "検証コード"
-  }
-
-  tags = {
-    Env = "${dirname(path_relative_to_include())}"
   }
 }
 
@@ -101,11 +87,28 @@ resource "aws_cognito_identity_provider" "google" {
   provider_type = "Google"
   provider_details = {
     authorize_scopes = "email"
-    client_id        = aws_cognito_user_pool_client.client.id
-    client_secret    = aws_cognito_user_pool_client.client.client_secret
+#     TODO clinet_idとclient_secretはGoogleへのアプリ登録が終わったら発行される値
+    client_id        = ""
+    client_secret    = ""
   }
   attribute_mapping = {
     email    = "email"
-    username = "preferred_username"
+    preferred_username = "name"
+  }
+}
+
+resource "aws_cognito_identity_provider" "apple" {
+  user_pool_id  = aws_cognito_user_pool.user_pool.id
+  provider_name = "SignInWithApple"
+  provider_type = "SignInWithApple"
+  provider_details = {
+    authorize_scopes = "email"
+    #     TODO clinet_idとclient_secretはGoogleへのアプリ登録が終わったら発行される値
+    client_id        = ""
+    client_secret    = ""
+  }
+  attribute_mapping = {
+    email    = "email"
+    preferred_username = "sub"
   }
 }

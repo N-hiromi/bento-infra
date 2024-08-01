@@ -4,7 +4,7 @@ module "alb" {
   load_balancer_type = "application"
 
   vpc_id          = data.aws_vpc.vpc.id
-  subnets         = data.aws_subnet_ids.public_subnet_ids.ids
+  subnets         = data.aws_subnets.public_subnets.ids
   security_groups = [data.aws_security_group.alb.id]
   //  access_logs = {
   //    bucket = "${local.project_key}-log"
@@ -21,7 +21,7 @@ module "alb" {
     }
   ]
 
-  http_tcp_listeners = [{
+  listeners = [{
     port               = 80
     protocol           = "HTTP"
     target_group_index = 0

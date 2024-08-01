@@ -6,14 +6,6 @@ data "aws_vpc" "vpc" {
   }
 }
 
-data "aws_subnet_ids" "public_subnet_ids" {
-  vpc_id = data.aws_vpc.vpc.id
-  filter {
-    name   = "tag:Name"
-    values = ["${local.project_key}-public*"]
-  }
-}
-
 data "aws_security_group" "alb" {
   filter {
     name   = "tag:Name"
@@ -21,13 +13,45 @@ data "aws_security_group" "alb" {
   }
 }
 
-data "aws_security_group" "api" {
+data "aws_security_group" "api_sg" {
   filter {
     name   = "tag:Name"
     values = ["${local.project_key}-api-sg"]
   }
 }
 
-data "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
+data "aws_security_group" "batch_sg" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.project_key}-batch-sg"]
+  }
+}
+
+data "aws_security_group" "worker_sg" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.project_key}-worker-sg"]
+  }
+}
+
+data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.vpc.id]
+  }
+  filter {
+    name   = "tag:Name"
+    values = ["${local.project_key}-private*"]
+  }
+}
+
+data "aws_subnets" "public_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.vpc.id]
+  }
+  filter {
+    name   = "tag:Name"
+    values = ["${local.project_key}-public*"]
+  }
 }
