@@ -43,6 +43,7 @@ resource "aws_iam_role_policy_attachment" "dynamodb_batch" {
 
 ################# ecs #################
 module "log_group_batch" {
+  version = "5.4.0"
   source            = "terraform-aws-modules/cloudwatch/aws//modules/log-group"
   name              = "/ecs/${local.project_key}-batch"
   retention_in_days = 120

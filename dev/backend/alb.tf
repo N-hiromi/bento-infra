@@ -1,4 +1,5 @@
 module "alb" {
+  version = "9.10.0"
   source             = "terraform-aws-modules/alb/aws"
   name               = "${local.project_key}-alb"
   load_balancer_type = "application"
@@ -26,4 +27,22 @@ module "alb" {
     protocol           = "HTTP"
     target_group_index = 0
   }]
+}
+
+resource "aws_lb_listener_rule" "allow_custom_header" {
+  listener_arn = module.alb.listeners[0].arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = module.alb.target_groups[0].arn
+  }
+
+  condition {
+    http_header {
+      http_header_name = "Custom-Header"
+#       ランダムな文字列を設定
+      values           = ["1eWNx5XLlXeBmf70pEzk"]
+    }
+  }
 }

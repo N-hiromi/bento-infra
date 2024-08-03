@@ -1,5 +1,6 @@
 ################# ecs #################
 module "ecs" {
+    version = "5.11.3"
   source             = "terraform-aws-modules/ecs/aws"
   cluster_name               = "${local.project_key}-cluster"
   cluster_settings          = [

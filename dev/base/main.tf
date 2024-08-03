@@ -1,3 +1,8 @@
+data "aws_ip_ranges" "ap_northeast_cloudfront" {
+  regions  = ["ap-northeast-1", "ap-northeast-1"]
+  services = ["cloudfront"]
+}
+
 ################# vpc #################
 module "vpc" {
   version = "~> 5.0"
@@ -16,15 +21,16 @@ module "vpc" {
 
 ################# security-groups #################
 module "alb-sg" {
+  version = "5.1.2"
   source = "terraform-aws-modules/security-group/aws"
   name   = "${local.project_key}-alb-sg"
   vpc_id = module.vpc.vpc_id
   ingress_with_cidr_blocks = [{
     description = "Allow ingress on port 80 from 0.0.0.0/0"
-    from_port   = 80
-    to_port     = 80
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = "0.0.0.0/0"
+    cidr_blocks = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks
   }]
   egress_with_cidr_blocks = [{
     from_port   = 0
@@ -34,19 +40,40 @@ module "alb-sg" {
   }]
 }
 
+resource "aws_security_group_ingress_rule" "allow_custom_header_ingress" {
+  name = "Allow ingress on port 8080 with custom header"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  cidr_blocks       = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks
+  security_group_id = module.alb-sg.security_group_id
+  description       = "Allow ingress on port 8080 with custom header"
+}
+
 module "api-sg" {
+  version = "5.1.2"
   source = "terraform-aws-modules/security-group/aws"
   name   = "${local.project_key}-api-sg"
   vpc_id = module.vpc.vpc_id
+#   albからのアクセスを許可
   ingress_with_source_security_group_id = [
     {
       description              = "from alb"
-      from_port                = 80
-      to_port                  = 80
+      from_port                = 8080
+      to_port                  = 8080
       protocol                 = "TCP"
       source_security_group_id = module.alb-sg.security_group_id
     }
   ]
+  #  TODO   疎通確認用。大竹のip。確認取れたら削除する
+  ingress_with_cidr_blocks = [{
+    description = "Allow SSH from specific IP"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = "133.32.129.184"
+    }]
+
   egress_with_cidr_blocks = [{
     description = "to all"
     from_port   = 0
@@ -57,14 +84,15 @@ module "api-sg" {
 }
 
 module "batch-sg" {
+  version = "5.1.2"
   source = "terraform-aws-modules/security-group/aws"
   name   = "${local.project_key}-batch-sg"
   vpc_id = module.vpc.vpc_id
   ingress_with_source_security_group_id = [
     {
       description              = "from alb"
-      from_port                = 80
-      to_port                  = 80
+      from_port                = 8080
+      to_port                  = 8080
       protocol                 = "TCP"
       source_security_group_id = module.alb-sg.security_group_id
     }
@@ -79,14 +107,15 @@ module "batch-sg" {
 }
 
 module "worker-sg" {
+  version = "5.1.2"
   source = "terraform-aws-modules/security-group/aws"
   name   = "${local.project_key}-worker-sg"
   vpc_id = module.vpc.vpc_id
   ingress_with_source_security_group_id = [
     {
       description              = "from alb"
-      from_port                = 80
-      to_port                  = 80
+      from_port                = 8080
+      to_port                  = 8080
       protocol                 = "TCP"
       source_security_group_id = module.alb-sg.security_group_id
     }

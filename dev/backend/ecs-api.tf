@@ -41,6 +41,7 @@ resource "aws_iam_role_policy_attachment" "dynamodb_api" {
 
 ################# ecs #################
 module "log_group_api" {
+  version = "5.4.0"
   source            = "terraform-aws-modules/cloudwatch/aws//modules/log-group"
   name              = "/ecs/${local.project_key}-api"
   retention_in_days = 120
