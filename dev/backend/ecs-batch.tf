@@ -1,6 +1,6 @@
 ################# iam #################
 resource "aws_iam_role" "ecs_task_role_batch" {
-  name = "${local.project_key}-ecs-task-role"
+  name = "${local.project_key}-ecs-task-role-batch"
 
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.
@@ -51,7 +51,7 @@ module "log_group_batch" {
 
 resource "aws_ecs_service" "batch" {
   name            = "${local.project_key}-batch"
-  depends_on      = [module.alb]
+  depends_on      = [aws_lb.alb]
   launch_type     = "FARGATE"
   cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.batch.arn
@@ -59,12 +59,12 @@ resource "aws_ecs_service" "batch" {
 
   network_configuration {
     subnets          = data.aws_subnets.private_subnets.ids
-    security_groups  = [data.aws_security_group.batch_sg]
+    security_groups  = [data.aws_security_group.batch_sg.id]
     assign_public_ip = true
   }
 
   load_balancer {
-    target_group_arn = module.alb.target_groups[0].arn
+    target_group_arn = aws_lb_target_group.fargate_target_group.arn
     container_name   = "${local.project_key}-batch"
     container_port   = 8080
   }

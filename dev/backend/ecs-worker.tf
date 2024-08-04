@@ -1,6 +1,6 @@
 ################# iam #################
 resource "aws_iam_role" "ecs_task_role_worker" {
-  name = "${local.project_key}-ecs-task-role"
+  name = "${local.project_key}-ecs-task-role-worker"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -59,7 +59,7 @@ module "log_group_worker" {
 
 resource "aws_ecs_service" "worker" {
   name            = "${local.project_key}-worker"
-  depends_on      = [module.alb]
+  depends_on      = [aws_lb.alb]
   launch_type     = "FARGATE"
   cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.worker.arn
@@ -67,12 +67,12 @@ resource "aws_ecs_service" "worker" {
 
   network_configuration {
     subnets          = data.aws_subnets.private_subnets.ids
-    security_groups  = [data.aws_security_group.worker_sg]
+    security_groups  = [data.aws_security_group.worker_sg.id]
     assign_public_ip = true
   }
 
   load_balancer {
-    target_group_arn = module.alb.target_groups[0].arn
+    target_group_arn = aws_lb_target_group.fargate_target_group.arn
     container_name   = "${local.project_key}-worker"
     container_port   = 8080
   }

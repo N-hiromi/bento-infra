@@ -1,6 +1,6 @@
 ################# iam #################
 resource "aws_iam_role" "ecs_task_role_api" {
-  name = "${local.project_key}-ecs-task-role"
+  name = "${local.project_key}-ecs-task-role-api"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -80,7 +80,7 @@ resource "aws_ecs_task_definition" "api" {
 
 resource "aws_ecs_service" "api" {
   name            = "${local.project_key}-api"
-  depends_on      = [module.alb]
+  depends_on      = [aws_lb.alb]
   launch_type     = "FARGATE"
   cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.api.arn
@@ -88,12 +88,12 @@ resource "aws_ecs_service" "api" {
 
   network_configuration {
     subnets          = data.aws_subnets.public_subnets.ids
-    security_groups  = [data.aws_security_group.api_sg]
+    security_groups  = [data.aws_security_group.api_sg.id]
     assign_public_ip = true
   }
 
   load_balancer {
-    target_group_arn = module.alb.target_groups[0].arn
+    target_group_arn = aws_lb_target_group.fargate_target_group.arn
     container_name   = "${local.project_key}-api"
     container_port   = 8080
   }
