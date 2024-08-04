@@ -1,6 +1,5 @@
-data "aws_ip_ranges" "ap_northeast_cloudfront" {
-  regions  = ["ap-northeast-1", "ap-northeast-1"]
-  services = ["cloudfront"]
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
 ################# vpc #################
@@ -30,7 +29,8 @@ module "alb-sg" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks
+#     cidr_blocks = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks[0]
+    prefix_list_ids = data.aws_ec2_managed_prefix_list.cloudfront.id
   }]
   egress_with_cidr_blocks = [{
     from_port   = 0
@@ -40,12 +40,11 @@ module "alb-sg" {
   }]
 }
 
-resource "aws_security_group_ingress_rule" "allow_custom_header_ingress" {
-  name = "Allow ingress on port 8080 with custom header"
+resource "aws_vpc_security_group_ingress_rule" "allow_custom_header_ingress" {
   from_port         = 8080
   to_port           = 8080
-  protocol          = "tcp"
-  cidr_blocks       = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks
+  ip_protocol = "tcp"
+  prefix_list_id = data.aws_ec2_managed_prefix_list.cloudfront.id
   security_group_id = module.alb-sg.security_group_id
   description       = "Allow ingress on port 8080 with custom header"
 }
@@ -71,7 +70,7 @@ module "api-sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = "133.32.129.184"
+    cidr_blocks = "133.32.129.184/32"
     }]
 
   egress_with_cidr_blocks = [{

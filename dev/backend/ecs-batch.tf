@@ -43,7 +43,7 @@ resource "aws_iam_role_policy_attachment" "dynamodb_batch" {
 
 ################# ecs #################
 module "log_group_batch" {
-  version = "5.4.0"
+  version           = "5.4.0"
   source            = "terraform-aws-modules/cloudwatch/aws//modules/log-group"
   name              = "/ecs/${local.project_key}-batch"
   retention_in_days = 120
@@ -73,7 +73,7 @@ resource "aws_ecs_service" "batch" {
 
 resource "aws_ecs_task_definition" "batch" {
   family                   = "${local.project_key}-batch-family"
-  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   network_mode             = "awsvpc"
   task_role_arn            = aws_iam_role.ecs_task_role_batch.arn
   requires_compatibilities = ["FARGATE"]

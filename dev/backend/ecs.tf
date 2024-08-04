@@ -1,24 +1,26 @@
 ################# ecs #################
 module "ecs" {
-    version = "5.11.3"
-  source             = "terraform-aws-modules/ecs/aws"
-  cluster_name               = "${local.project_key}-cluster"
-  cluster_settings          = [
+  version      = "5.11.3"
+  source       = "terraform-aws-modules/ecs/aws"
+  cluster_name = "${local.project_key}-cluster"
+  cluster_settings = [
     {
       name  = "containerInsights"
       value = "enabled"
     }
   ]
-  fargate_capacity_providers = [
-    {
-      name = "FARGATE"
-      platform_version = "LATEST"
-    },
-    {
-      name = "FARGATE_SPOT"
-      platform_version = "LATEST"
+  fargate_capacity_providers = {
+    FARGATE = {
+      default_capacity_provider_strategy = {
+        weight = 50
+      }
     }
-  ]
+    FARGATE_SPOT = {
+      default_capacity_provider_strategy = {
+        weight = 50
+      }
+    }
+  }
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {

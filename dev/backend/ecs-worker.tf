@@ -51,7 +51,7 @@ resource "aws_iam_role_policy_attachment" "sqs_worker" {
 
 ################# ecs #################
 module "log_group_worker" {
-  version = "5.4.0"
+  version           = "5.4.0"
   source            = "terraform-aws-modules/cloudwatch/aws//modules/log-group"
   name              = "/ecs/${local.project_key}-worker"
   retention_in_days = 120
@@ -81,7 +81,7 @@ resource "aws_ecs_service" "worker" {
 
 resource "aws_ecs_task_definition" "worker" {
   family                   = "${local.project_key}-worker-family"
-  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   network_mode             = "awsvpc"
   task_role_arn            = aws_iam_role.ecs_task_role_worker.arn
   requires_compatibilities = ["FARGATE"]

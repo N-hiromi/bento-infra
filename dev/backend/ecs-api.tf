@@ -41,7 +41,7 @@ resource "aws_iam_role_policy_attachment" "dynamodb_api" {
 
 ################# ecs #################
 module "log_group_api" {
-  version = "5.4.0"
+  version           = "5.4.0"
   source            = "terraform-aws-modules/cloudwatch/aws//modules/log-group"
   name              = "/ecs/${local.project_key}-api"
   retention_in_days = 120
@@ -49,7 +49,7 @@ module "log_group_api" {
 
 resource "aws_ecs_task_definition" "api" {
   family                   = "${local.project_key}-api-family"
-  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   network_mode             = "awsvpc"
   task_role_arn            = aws_iam_role.ecs_task_role_api.arn
   requires_compatibilities = ["FARGATE"]
@@ -90,11 +90,11 @@ resource "aws_ecs_service" "api" {
     subnets          = data.aws_subnets.public_subnets.ids
     security_groups  = [data.aws_security_group.api_sg]
     assign_public_ip = true
-}
+  }
 
-load_balancer {
-target_group_arn = module.alb.target_groups[0].arn
-container_name   = "${local.project_key}-api"
-container_port   = 8080
-}
+  load_balancer {
+    target_group_arn = module.alb.target_groups[0].arn
+    container_name   = "${local.project_key}-api"
+    container_port   = 8080
+  }
 }
