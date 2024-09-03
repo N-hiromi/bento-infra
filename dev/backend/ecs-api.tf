@@ -39,6 +39,11 @@ resource "aws_iam_role_policy_attachment" "dynamodb_api" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "secret_manager_api" {
+  role       = aws_iam_role.ecs_task_role_api.name
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+}
+
 ################# ecs #################
 module "log_group_api" {
   version           = "5.4.0"
@@ -56,30 +61,53 @@ resource "aws_ecs_task_definition" "api" {
   cpu                      = 256
   memory                   = 512
 
+  runtime_platform {
+    cpu_architecture = "X86_64"
+    operating_system_family = "LINUX"
+  }
+
   container_definitions = jsonencode([
     {
       name = "${local.project_key}-api"
       //      image     = "httpd"
       image     = "${aws_ecr_repository.api.repository_url}:latest"
+
+      # TODO デバッグ用
+      enable_execute_command = true
+
       essential = true
-      logConfiguration : {
-        "logDriver" : "awslogs",
-        "options" : {
-          "awslogs-group" : "/ecs/${local.project_key}-api",
-          "awslogs-region" : "ap-northeast-1",
-          "awslogs-stream-prefix" : "ecs"
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group = "/ecs/${local.project_key}-api",
+          awslogs-region = "ap-northeast-1",
+          awslogs-stream-prefix = "ecs"
         }
-      },
-      portMappings = [{
-        containerPort = 8080
-        hostPort      = 8080
-      }]
+      }
+
+      portMappings = [
+        {
+          containerPort = 8080
+          hostPort      = 8080
+        }
+      ]
+
+      environment = [
+        { "name": "ENV", "value": "dev" }
+      ]
+
+      healthCheck = {
+        command = ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+        interval = 30
+        timeout = 5
+        retries = 3
+      }
     }
   ])
 }
 
 resource "aws_ecs_service" "api" {
-  name            = "${local.project_key}-api"
+  name            = "${local.project_key}-api-service"
   depends_on      = [aws_lb.alb]
   launch_type     = "FARGATE"
   cluster         = module.ecs.cluster_id

@@ -50,8 +50,8 @@ module "log_group_batch" {
 }
 
 resource "aws_ecs_service" "batch" {
-  name            = "${local.project_key}-batch"
-  depends_on      = [aws_lb.alb]
+  name            = "${local.project_key}-batch-service"
+  depends_on      = [aws_iam_role.ecs_task_role_batch]
   launch_type     = "FARGATE"
   cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.batch.arn
@@ -60,13 +60,7 @@ resource "aws_ecs_service" "batch" {
   network_configuration {
     subnets          = data.aws_subnets.private_subnets.ids
     security_groups  = [data.aws_security_group.batch_sg.id]
-    assign_public_ip = true
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.fargate_target_group.arn
-    container_name   = "${local.project_key}-batch"
-    container_port   = 8080
+    assign_public_ip = false
   }
 }
 
@@ -80,24 +74,28 @@ resource "aws_ecs_task_definition" "batch" {
   cpu                      = 256
   memory                   = 512
 
+  runtime_platform {
+    cpu_architecture = "X86_64"
+    operating_system_family = "LINUX"
+  }
+
   container_definitions = jsonencode([
     {
       name = "${local.project_key}-batch"
-      //      image     = "httpd"
       image     = "${aws_ecr_repository.batch.repository_url}:latest"
+
+      # TODO デバッグ用
+      enable_execute_command = true
+
       essential = true
-      logConfiguration : {
-        "logDriver" : "awslogs",
-        "options" : {
-          "awslogs-group" : "/ecs/${local.project_key}-batch",
-          "awslogs-region" : "ap-northeast-1",
-          "awslogs-stream-prefix" : "ecs"
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group = "/ecs/${local.project_key}-batch",
+          awslogs-region = "ap-northeast-1",
+          awslogs-stream-prefix = "ecs"
         }
-      },
-      portMappings = [{
-        containerPort = 8080
-        hostPort      = 8080
-      }]
+      }
     }
   ])
 }

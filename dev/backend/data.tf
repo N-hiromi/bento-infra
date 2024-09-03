@@ -34,6 +34,13 @@ data "aws_security_group" "worker_sg" {
   }
 }
 
+data "aws_security_group" "ai_sg" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.project_key}-ai-sg"]
+  }
+}
+
 data "aws_subnets" "private_subnets" {
   filter {
     name   = "vpc-id"

@@ -25,7 +25,7 @@ module "alb-sg" {
   name   = "${local.project_key}-alb-sg"
   vpc_id = module.vpc.vpc_id
   ingress_with_cidr_blocks = [{
-    description = "Allow ingress on port 80 from 0.0.0.0/0"
+    description = "Allow ingress on port 8080 from 0.0.0.0/0"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
@@ -87,15 +87,6 @@ module "batch-sg" {
   source = "terraform-aws-modules/security-group/aws"
   name   = "${local.project_key}-batch-sg"
   vpc_id = module.vpc.vpc_id
-  ingress_with_source_security_group_id = [
-    {
-      description              = "from alb"
-      from_port                = 8080
-      to_port                  = 8080
-      protocol                 = "TCP"
-      source_security_group_id = module.alb-sg.security_group_id
-    }
-  ]
   egress_with_cidr_blocks = [{
     description = "to all"
     from_port   = 0
@@ -110,15 +101,20 @@ module "worker-sg" {
   source = "terraform-aws-modules/security-group/aws"
   name   = "${local.project_key}-worker-sg"
   vpc_id = module.vpc.vpc_id
-  ingress_with_source_security_group_id = [
-    {
-      description              = "from alb"
-      from_port                = 8080
-      to_port                  = 8080
-      protocol                 = "TCP"
-      source_security_group_id = module.alb-sg.security_group_id
-    }
-  ]
+  egress_with_cidr_blocks = [{
+    description = "to all"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = "0.0.0.0/0"
+  }]
+}
+
+module "ai-sg" {
+  version = "5.1.2"
+  source = "terraform-aws-modules/security-group/aws"
+  name   = "${local.project_key}-ai-sg"
+  vpc_id = module.vpc.vpc_id
   egress_with_cidr_blocks = [{
     description = "to all"
     from_port   = 0
