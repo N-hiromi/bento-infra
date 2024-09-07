@@ -64,14 +64,6 @@ module "api-sg" {
       source_security_group_id = module.alb-sg.security_group_id
     }
   ]
-  #  TODO   疎通確認用。大竹のip。確認取れたら削除する
-  ingress_with_cidr_blocks = [{
-    description = "Allow SSH from specific IP"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = "133.32.129.184/32"
-    }]
 
   egress_with_cidr_blocks = [{
     description = "to all"
