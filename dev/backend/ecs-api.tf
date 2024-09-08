@@ -120,6 +120,7 @@ resource "aws_ecs_service" "api" {
   network_configuration {
     subnets          = data.aws_subnets.public_subnets.ids
     security_groups  = [data.aws_security_group.api_sg.id]
+    assign_public_ip = true
   }
 
   load_balancer {
