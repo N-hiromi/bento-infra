@@ -87,9 +87,6 @@ resource "aws_ecs_task_definition" "batch" {
       name = "${local.project_key}-batch"
       image     = "${aws_ecr_repository.batch.repository_url}:latest"
 
-      # TODO デバッグ用
-      enable_execute_command = true
-
       essential = true
       logConfiguration = {
         logDriver = "awslogs",

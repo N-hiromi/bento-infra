@@ -95,9 +95,6 @@ resource "aws_ecs_task_definition" "worker" {
       name = "${local.project_key}-worker"
       image     = "${aws_ecr_repository.worker.repository_url}:latest"
 
-      # TODO デバッグ用
-      enable_execute_command = true
-
       essential = true
       logConfiguration = {
         logDriver = "awslogs",

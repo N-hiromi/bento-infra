@@ -17,6 +17,29 @@ resource "aws_iam_role" "ecs_task_role_api" {
   })
 }
 
+// todo デバッグ用
+# resource "aws_iam_role_policy" "inline_policy_example" {
+#   name = "inline-policy-example"
+#   role = aws_iam_role.ecs_task_role_api.name
+#
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect: "Allow",
+#         Action: [
+#           "ssmmessages:CreateControlChannel",
+#           "ssmmessages:CreateDataChannel",
+#           "ssmmessages:OpenControlChannel",
+#           "ssmmessages:OpenDataChannel"
+#         ],
+#         Resource: "*"
+#       }
+#     ]
+#   })
+# }
+
+
 # 共通設定
 resource "aws_iam_role_policy_attachment" "cloudwatch_log_api" {
   role       = aws_iam_role.ecs_task_role_api.name
@@ -71,9 +94,6 @@ resource "aws_ecs_task_definition" "api" {
       name = "${local.project_key}-api"
       //      image     = "httpd"
       image     = "${aws_ecr_repository.api.repository_url}:latest"
-
-      # TODO デバッグ用
-      enable_execute_command = true
 
       essential = true
       logConfiguration = {
