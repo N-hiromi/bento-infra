@@ -63,6 +63,7 @@ resource "aws_ecs_service" "batch" {
   network_configuration {
     subnets          = data.aws_subnets.public_subnets.ids
     security_groups  = [data.aws_security_group.batch_sg.id]
+    assign_public_ip = true
   }
 }
 
