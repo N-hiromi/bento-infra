@@ -30,7 +30,7 @@ resource "aws_iam_role_policy_attachment" "ecs_api" {
 
 resource "aws_iam_role_policy_attachment" "ecr_api" {
   role       = aws_iam_role.ecs_task_role_api.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonElasticContainerRegistryPublicReadOnly"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 # 固有の設定
