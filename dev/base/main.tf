@@ -8,13 +8,11 @@ module "vpc" {
   source                = "terraform-aws-modules/vpc/aws"
   name                  = local.project_key
   cidr                  = "10.0.0.0/16"
-  private_subnets       = ["10.0.0.0/19", "10.0.32.0/19"]   # "10.0.64.0/19"
   public_subnets        = ["10.0.96.0/19", "10.0.128.0/19"] # "10.0.160.0/19"
   enable_nat_gateway    = false
   single_nat_gateway    = false
   reuse_nat_ips         = true
   azs                   = ["apne1-az1", "apne1-az2"] # "apne1-az4"
-  private_subnet_suffix = "private-subnet"
   public_subnet_suffix  = "public-subnet"
 }
 

@@ -65,10 +65,12 @@ resource "aws_ecs_service" "worker" {
   task_definition = aws_ecs_task_definition.worker.arn
   desired_count   = 2
 
+  #   更新されたコンテナイメージをタスクに使用する場合は、ECSの新しいデプロイを強制する
+  force_new_deployment = true
+
   network_configuration {
-    subnets          = data.aws_subnets.private_subnets.ids
+    subnets          = data.aws_subnets.public_subnets.ids
     security_groups  = [data.aws_security_group.worker_sg.id]
-    assign_public_ip = false
   }
 }
 
