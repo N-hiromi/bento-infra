@@ -51,3 +51,7 @@ data "aws_subnets" "public_subnets" {
     values = ["${local.project_key}-public*"]
   }
 }
+
+data "aws_key_pair" "key" {
+  key_name = local.project_key
+}

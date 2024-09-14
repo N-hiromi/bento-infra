@@ -16,3 +16,6 @@ data "aws_subnets" "public_subnets" {
   }
 }
 
+# data "aws_iam_role" "cognito_identity_role" {
+#   name = "nnaabbee_tidy_sample_id_pool_role"
+# }

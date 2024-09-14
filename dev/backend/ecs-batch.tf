@@ -52,8 +52,7 @@ module "log_group_batch" {
 resource "aws_ecs_service" "batch" {
   name            = "${local.project_key}-batch-service"
   depends_on      = [aws_iam_role.ecs_task_role_batch]
-  launch_type     = "FARGATE"
-  cluster         = module.ecs.cluster_id
+  cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.batch.arn
   desired_count   = 2
 
@@ -64,6 +63,25 @@ resource "aws_ecs_service" "batch" {
     subnets          = data.aws_subnets.public_subnets.ids
     security_groups  = [data.aws_security_group.batch_sg.id]
     assign_public_ip = true
+  }
+
+  // deployに失敗したらロールバックする
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  // サービスが停止したらアラームを通知する。ロールバックもする
+  alarms {
+    alarm_names = ["${local.project_key}-ai-service"]
+    enable   = true
+    rollback = true
+  }
+
+  # fargate_spotを使用する設定
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight = 1
   }
 }
 

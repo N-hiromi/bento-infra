@@ -129,8 +129,7 @@ resource "aws_ecs_task_definition" "api" {
 resource "aws_ecs_service" "api" {
   name            = "${local.project_key}-api-service"
   depends_on      = [aws_lb.alb]
-  launch_type     = "FARGATE"
-  cluster         = module.ecs.cluster_id
+  cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.api.arn
   desired_count   = 2
 
@@ -143,9 +142,28 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = true
   }
 
+  // deployに失敗したらロールバックする
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  // サービスが停止したらアラームを通知する。ロールバックもする
+  alarms {
+    alarm_names = ["${local.project_key}-ai-service"]
+    enable   = true
+    rollback = true
+  }
+
   load_balancer {
     target_group_arn = aws_lb_target_group.fargate_target_group.arn
     container_name   = "${local.project_key}-api"
     container_port   = 8080
+  }
+
+# fargate_spotを使用する設定
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight = 1
   }
 }

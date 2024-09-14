@@ -9,6 +9,7 @@ module "vpc" {
   name                  = local.project_key
   cidr                  = "10.0.0.0/16"
   public_subnets        = ["10.0.96.0/19", "10.0.128.0/19"] # "10.0.160.0/19"
+  map_public_ip_on_launch = true
   enable_nat_gateway    = false
   single_nat_gateway    = false
   reuse_nat_ips         = true
@@ -111,5 +112,13 @@ module "ai-sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = "0.0.0.0/0"
+  }]
+  // TODO debug用。ssh接続許可
+  ingress_with_cidr_blocks = [{
+      description = "allow ssh access"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = "0.0.0.0/0"
   }]
 }
