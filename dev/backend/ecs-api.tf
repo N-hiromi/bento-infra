@@ -17,6 +17,29 @@ resource "aws_iam_role" "ecs_task_role_api" {
   })
 }
 
+// todo デバッグ用
+# resource "aws_iam_role_policy" "inline_policy_example" {
+#   name = "inline-policy-example"
+#   role = aws_iam_role.ecs_task_role_api.name
+#
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect: "Allow",
+#         Action: [
+#           "ssmmessages:CreateControlChannel",
+#           "ssmmessages:CreateDataChannel",
+#           "ssmmessages:OpenControlChannel",
+#           "ssmmessages:OpenDataChannel"
+#         ],
+#         Resource: "*"
+#       }
+#     ]
+#   })
+# }
+
+
 # 共通設定
 resource "aws_iam_role_policy_attachment" "cloudwatch_log_api" {
   role       = aws_iam_role.ecs_task_role_api.name
@@ -30,13 +53,18 @@ resource "aws_iam_role_policy_attachment" "ecs_api" {
 
 resource "aws_iam_role_policy_attachment" "ecr_api" {
   role       = aws_iam_role.ecs_task_role_api.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonElasticContainerRegistryPublicReadOnly"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 # 固有の設定
 resource "aws_iam_role_policy_attachment" "dynamodb_api" {
   role       = aws_iam_role.ecs_task_role_api.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "secret_manager_api" {
+  role       = aws_iam_role.ecs_task_role_api.name
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 }
 
 ################# ecs #################
@@ -56,35 +84,57 @@ resource "aws_ecs_task_definition" "api" {
   cpu                      = 256
   memory                   = 512
 
+  runtime_platform {
+    cpu_architecture = "X86_64"
+    operating_system_family = "LINUX"
+  }
+
   container_definitions = jsonencode([
     {
       name = "${local.project_key}-api"
       //      image     = "httpd"
       image     = "${aws_ecr_repository.api.repository_url}:latest"
+
       essential = true
-      logConfiguration : {
-        "logDriver" : "awslogs",
-        "options" : {
-          "awslogs-group" : "/ecs/${local.project_key}-api",
-          "awslogs-region" : "ap-northeast-1",
-          "awslogs-stream-prefix" : "ecs"
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group = "/ecs/${local.project_key}-api",
+          awslogs-region = "ap-northeast-1",
+          awslogs-stream-prefix = "ecs"
         }
-      },
-      portMappings = [{
-        containerPort = 8080
-        hostPort      = 8080
-      }]
+      }
+
+      portMappings = [
+        {
+          containerPort = 8080
+          hostPort      = 8080
+        }
+      ]
+
+      environment = [
+        { "name": "ENV", "value": "dev" }
+      ]
+
+      healthCheck = {
+        command = ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+        interval = 30
+        timeout = 5
+        retries = 3
+      }
     }
   ])
 }
 
 resource "aws_ecs_service" "api" {
-  name            = "${local.project_key}-api"
+  name            = "${local.project_key}-api-service"
   depends_on      = [aws_lb.alb]
-  launch_type     = "FARGATE"
-  cluster         = module.ecs.cluster_id
+  cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.api.arn
   desired_count   = 2
+
+  #   更新されたコンテナイメージをタスクに使用する場合は、ECSの新しいデプロイを強制する
+  force_new_deployment = true
 
   network_configuration {
     subnets          = data.aws_subnets.public_subnets.ids
@@ -92,9 +142,28 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = true
   }
 
+  // deployに失敗したらロールバックする
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  // サービスが停止したらアラームを通知する。ロールバックもする
+  alarms {
+    alarm_names = ["${local.project_key}-ai-service"]
+    enable   = true
+    rollback = true
+  }
+
   load_balancer {
     target_group_arn = aws_lb_target_group.fargate_target_group.arn
     container_name   = "${local.project_key}-api"
     container_port   = 8080
+  }
+
+# fargate_spotを使用する設定
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight = 1
   }
 }

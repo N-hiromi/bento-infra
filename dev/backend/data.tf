@@ -34,14 +34,10 @@ data "aws_security_group" "worker_sg" {
   }
 }
 
-data "aws_subnets" "private_subnets" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.vpc.id]
-  }
+data "aws_security_group" "ai_sg" {
   filter {
     name   = "tag:Name"
-    values = ["${local.project_key}-private*"]
+    values = ["${local.project_key}-ai-sg"]
   }
 }
 
@@ -54,4 +50,8 @@ data "aws_subnets" "public_subnets" {
     name   = "tag:Name"
     values = ["${local.project_key}-public*"]
   }
+}
+
+data "aws_key_pair" "key" {
+  key_name = local.project_key
 }

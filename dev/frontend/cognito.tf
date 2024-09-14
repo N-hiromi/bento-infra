@@ -56,7 +56,7 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_client" "client" {
-  name         = local.project_key
+  name         = "${local.project_key}-client"
   user_pool_id = aws_cognito_user_pool.user_pool.id
   # アクセストークンの有効期限。単位は時間
   access_token_validity = 1
@@ -76,19 +76,26 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code", "implicit"]
   allowed_oauth_scopes                 = ["email", "openid"]
-#   supported_identity_providers         = ["COGNITO", "Facebook", "Google", "SignInWithApple", "LoginWithAmazon"]
+#   supported_identity_providers         = ["COGNITO", "Google", "SignInWithApple"]
+# TODO googleとappleは手動でコンソールから設定する
   supported_identity_providers         = ["COGNITO"]
 }
 
-# TODO 認証に使う外部サービスが決まったら設定する
 # 他サービス認証ごとの設定
+// google ------------------------------
+resource "aws_cognito_user_group" "google" {
+  name         = "${local.project_key}-google-user-group"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "google認証ユーザ"
+}
+
+# TODO googleの設定はこれは手動でコンソールからやる
 # resource "aws_cognito_identity_provider" "google" {
 #   user_pool_id  = aws_cognito_user_pool.user_pool.id
 #   provider_name = "Google"
 #   provider_type = "Google"
 #   provider_details = {
-#     authorize_scopes = "email"
-# #     TODO clinet_idとclient_secretはGoogleへのアプリ登録が終わったら発行される値
+#     authorize_scopes = "email profile openid"
 #     client_id        = ""
 #     client_secret    = ""
 #   }
@@ -97,16 +104,25 @@ resource "aws_cognito_user_pool_client" "client" {
 #     preferred_username = "name"
 #   }
 # }
-#
+
+// apple ------------------------------
+resource "aws_cognito_user_group" "apple" {
+  name         = "${local.project_key}-apple-user-group"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "apple認証ユーザ"
+}
+
+//TODO appleの設定はこれは手動でコンソールからやる
 # resource "aws_cognito_identity_provider" "apple" {
 #   user_pool_id  = aws_cognito_user_pool.user_pool.id
 #   provider_name = "SignInWithApple"
 #   provider_type = "SignInWithApple"
 #   provider_details = {
 #     authorize_scopes = "email"
-#     #     TODO clinet_idとclient_secretはGoogleへのアプリ登録が終わったら発行される値
 #     client_id        = ""
-#     client_secret    = ""
+#     private_key      = ""
+#     key_id           = ""
+#     team_id          = ""
 #   }
 #   attribute_mapping = {
 #     email    = "email"

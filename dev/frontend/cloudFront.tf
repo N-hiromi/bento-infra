@@ -1,4 +1,7 @@
 resource "aws_cloudfront_distribution" "alb_distribution" {
+  # ドメイン名を設定
+  aliases = ["tidy-ai.com"]
+
   origin {
     domain_name = data.aws_lb.app.dns_name
     origin_id   = data.aws_lb.app.id
@@ -11,7 +14,7 @@ resource "aws_cloudfront_distribution" "alb_distribution" {
     custom_origin_config {
       http_port              = 8080
       https_port             = 443
-      origin_protocol_policy = "https-only"
+      origin_protocol_policy = "http-only"
       origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
     }
   }
@@ -27,7 +30,7 @@ resource "aws_cloudfront_distribution" "alb_distribution" {
     allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id       = data.aws_lb.app.id
-    viewer_protocol_policy = "redirect-to-https"
+    viewer_protocol_policy = "https-only"
 
     forwarded_values {
       query_string = false
@@ -38,12 +41,16 @@ resource "aws_cloudfront_distribution" "alb_distribution" {
     }
   }
 
+  // TODO wafが小松さん家からしかアクセスできないようにしているので、コメントアウト。今後絞る予定ある?
   web_acl_id      = aws_wafv2_web_acl.this.arn
   enabled         = true
   is_ipv6_enabled = true
 
   viewer_certificate {
     cloudfront_default_certificate = true
+    acm_certificate_arn = "arn:aws:acm:us-east-1:204705984956:certificate/b1c62977-b5b2-4a2f-b978-a956d108a69d"
+    minimum_protocol_version = "TLSv1.2_2021"
+    ssl_support_method = "sni-only"
   }
 
   tags = {
