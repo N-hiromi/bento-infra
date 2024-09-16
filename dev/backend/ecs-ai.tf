@@ -169,6 +169,11 @@ resource "aws_ecs_task_definition" "ai" {
           awslogs-stream-prefix = "ecs"
         }
       }
+
+      environment = [
+        { "name": "ENV", "value": "dev" }
+      ]
+
       resource_requirements = [{
         type  = "GPU"
         value = "1"  # 利用するGPUの数

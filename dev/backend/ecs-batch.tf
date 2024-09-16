@@ -114,6 +114,10 @@ resource "aws_ecs_task_definition" "batch" {
           awslogs-stream-prefix = "ecs"
         }
       }
+
+      environment = [
+        { "name": "ENV", "value": "dev" }
+      ]
     }
   ])
 }
