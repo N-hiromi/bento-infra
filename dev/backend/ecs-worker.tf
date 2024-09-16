@@ -49,6 +49,11 @@ resource "aws_iam_role_policy_attachment" "sqs_worker" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "secret_manager" {
+  role       = aws_iam_role.ecs_task_role_worker.name
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+}
+
 ################# ecs #################
 module "log_group_worker" {
   version           = "5.4.0"
@@ -122,6 +127,10 @@ resource "aws_ecs_task_definition" "worker" {
           awslogs-stream-prefix = "ecs"
         }
       }
+
+      environment = [
+        { "name": "ENV", "value": "dev" }
+      ]
     }
   ])
 }

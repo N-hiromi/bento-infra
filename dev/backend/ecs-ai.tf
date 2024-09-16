@@ -98,7 +98,7 @@ resource "aws_autoscaling_group" "ai" {
 
 resource "aws_launch_template" "ai" {
   name_prefix          = "${local.project_key}-ai-lc"
-  image_id             = "ami-0e4750e62374e797f"
+  image_id             = "ami-0c1b4319701241851"
   instance_type        = "g4dn.xlarge"
   key_name             = data.aws_key_pair.key.key_name
 
@@ -107,15 +107,24 @@ resource "aws_launch_template" "ai" {
     name = aws_iam_instance_profile.ecs_instance_profile_ai.name
   }
 
-#   TODO 申請が通るまでは普通のインスタンスを使って検証する -> ここの変更とかはインスタンスを作る時にしか反映されないみたい
-#   instance_market_options {
-#     market_type = "spot"  # スポットインスタンスを指定
-#   }
+  instance_market_options {
+    market_type = "spot"  # スポットインスタンスを指定
+  }
 
-  // EC2インスタンス起動時にECSクラスタへインスタンスを登録するための設定
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size = 100
+      volume_type = "gp3"
+    }
+  }
+
+  // EC2インスタンス起動時にECSクラスタへインスタンスを登録するための設定. ebsのリサイズも行う
   user_data = base64encode(<<-EOF
               #!/bin/bash
               echo "ECS_CLUSTER=${aws_ecs_cluster.cluster.name}" >> /etc/ecs/ecs.config
+              sudo resize2fs /dev/nvme0n1p1
               EOF
             )
 
@@ -124,12 +133,12 @@ resource "aws_launch_template" "ai" {
     security_groups = [data.aws_security_group.ai_sg.id]
   }
 
-    tag_specifications {
-        resource_type = "instance"
-        tags = {
-        Name = "${local.project_key}-ai"
-        }
-    }
+  tag_specifications {
+      resource_type = "instance"
+      tags = {
+      Name = "${local.project_key}-ai"
+      }
+  }
 }
 
 resource "aws_ecs_task_definition" "ai" {
@@ -138,8 +147,8 @@ resource "aws_ecs_task_definition" "ai" {
   network_mode             = "awsvpc"
   task_role_arn            = aws_iam_role.ecs_task_role_ai.arn
   requires_compatibilities = ["EC2"]
-  cpu                      = 4000
-  memory                   = 15000
+  cpu                      = 1000
+  memory                   = 2000
 
   runtime_platform {
     cpu_architecture = "X86_64"
