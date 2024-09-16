@@ -98,7 +98,7 @@ resource "aws_autoscaling_group" "ai" {
 
 resource "aws_launch_template" "ai" {
   name_prefix          = "${local.project_key}-ai-lc"
-  image_id             = "ami-0c1b4319701241851"
+  image_id             = "ami-0168a81614b20b0f8"
   instance_type        = "g4dn.xlarge"
   key_name             = data.aws_key_pair.key.key_name
 
