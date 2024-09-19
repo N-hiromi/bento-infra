@@ -44,6 +44,11 @@ resource "aws_iam_role_policy_attachment" "s3_ai" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "secret_manager_ai" {
+  role       = aws_iam_role.ecs_task_role_ai.name
+  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+}
+
 
 ################# コンテナインスタンスへのiam #################
 resource "aws_iam_role" "ecs_instance_role_ai" {
@@ -83,6 +88,16 @@ module "log_group_ai" {
   retention_in_days = 120
 }
 
+resource "aws_ecs_capacity_provider" "ec2" {
+  name = "${local.project_key}-capacity-provider"
+  auto_scaling_group_provider {
+    auto_scaling_group_arn = aws_autoscaling_group.ai.arn
+    managed_scaling {
+      status = "ENABLED"
+    }
+  }
+}
+
 resource "aws_autoscaling_group" "ai" {
   name                 = "${local.project_key}-ai-asg"
   max_size             = 1
@@ -98,7 +113,7 @@ resource "aws_autoscaling_group" "ai" {
 
 resource "aws_launch_template" "ai" {
   name_prefix          = "${local.project_key}-ai-lc"
-  image_id             = "ami-0168a81614b20b0f8"
+  image_id             = "ami-03fb0906f926033b3"
   instance_type        = "g4dn.xlarge"
   key_name             = data.aws_key_pair.key.key_name
 
@@ -123,6 +138,7 @@ resource "aws_launch_template" "ai" {
   // EC2インスタンス起動時にECSクラスタへインスタンスを登録するための設定. ebsのリサイズも行う
   user_data = base64encode(<<-EOF
               #!/bin/bash
+              nvidia-smi
               echo "ECS_CLUSTER=${aws_ecs_cluster.cluster.name}" >> /etc/ecs/ecs.config
               sudo resize2fs /dev/nvme0n1p1
               EOF

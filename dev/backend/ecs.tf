@@ -27,16 +27,6 @@ resource "aws_ecs_cluster_capacity_providers" "cluster_capacity_providers" {
   }
 }
 
-resource "aws_ecs_capacity_provider" "ec2" {
-  name = "${local.project_key}-capacity-provider"
-  auto_scaling_group_provider {
-    auto_scaling_group_arn = aws_autoscaling_group.ai.arn
-    managed_scaling {
-      status = "ENABLED"
-    }
-  }
-}
-
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${local.project_key}-ecs-task-execution-role"
 
