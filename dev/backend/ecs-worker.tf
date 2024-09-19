@@ -87,14 +87,14 @@ resource "aws_ecs_service" "worker" {
   // サービスが停止したらアラームを通知する。ロールバックもする
   alarms {
     alarm_names = ["${local.project_key}-ai-service"]
-    enable   = true
-    rollback = true
+    enable      = true
+    rollback    = true
   }
 
   # fargate_spotを使用する設定
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
-    weight = 1
+    weight            = 1
   }
 }
 
@@ -109,27 +109,27 @@ resource "aws_ecs_task_definition" "worker" {
   memory                   = 512
 
   runtime_platform {
-    cpu_architecture = "X86_64"
+    cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }
 
   container_definitions = jsonencode([
     {
-      name = "${local.project_key}-worker"
-      image     = "${aws_ecr_repository.worker.repository_url}:latest"
+      name  = "${local.project_key}-worker"
+      image = "${aws_ecr_repository.worker.repository_url}:latest"
 
       essential = true
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group = "/ecs/${local.project_key}-worker",
-          awslogs-region = "ap-northeast-1",
+          awslogs-group         = "/ecs/${local.project_key}-worker",
+          awslogs-region        = "ap-northeast-1",
           awslogs-stream-prefix = "ecs"
         }
       }
 
       environment = [
-        { "name": "ENV", "value": "dev" }
+        { "name" : "ENV", "value" : "dev" }
       ]
     }
   ])

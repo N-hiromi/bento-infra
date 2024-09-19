@@ -76,9 +76,9 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code", "implicit"]
   allowed_oauth_scopes                 = ["email", "openid"]
-#   supported_identity_providers         = ["COGNITO", "Google", "SignInWithApple"]
-# TODO googleとappleは手動でコンソールから設定する
-  supported_identity_providers         = ["COGNITO"]
+  #   supported_identity_providers         = ["COGNITO", "Google", "SignInWithApple"]
+  # TODO googleとappleは手動でコンソールから設定する
+  supported_identity_providers = ["COGNITO"]
 }
 
 # 他サービス認証ごとの設定
