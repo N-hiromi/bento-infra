@@ -113,7 +113,7 @@ resource "aws_autoscaling_group" "ai" {
 
 resource "aws_launch_template" "ai" {
   name_prefix   = "${local.project_key}-ai-lc"
-  image_id      = "ami-03fb0906f926033b3"
+  image_id      = "ami-09b8ca242863d5977"
   instance_type = "g4dn.xlarge"
   key_name      = data.aws_key_pair.key.key_name
 
@@ -126,21 +126,22 @@ resource "aws_launch_template" "ai" {
     market_type = "spot" # スポットインスタンスを指定
   }
 
-  block_device_mappings {
-    device_name = "/dev/xvda"
+#   block_device_mappings {
+#     device_name = "/dev/xvda"
+#
+#     ebs {
+#       volume_size = 100
+#       volume_type = "gp3"
+#     }
+#   }
 
-    ebs {
-      volume_size = 100
-      volume_type = "gp3"
-    }
-  }
-
-  // EC2インスタンス起動時にECSクラスタへインスタンスを登録するための設定. ebsのリサイズも行う
+  // EC2インスタンス起動時にECSクラスタへインスタンスを登録するためにクラスタを指定
+  // エージェントを起動する
   user_data = base64encode(<<-EOF
               #!/bin/bash
               nvidia-smi
               echo "ECS_CLUSTER=${aws_ecs_cluster.cluster.name}" >> /etc/ecs/ecs.config
-              sudo resize2fs /dev/nvme0n1p1
+              sudo systemctl restart ecs
               EOF
   )
 
@@ -163,8 +164,8 @@ resource "aws_ecs_task_definition" "ai" {
   network_mode             = "awsvpc"
   task_role_arn            = aws_iam_role.ecs_task_role_ai.arn
   requires_compatibilities = ["EC2"]
-  cpu                      = 1000
-  memory                   = 2000
+  cpu                      = 2000
+  memory                   = 6000
 
   runtime_platform {
     cpu_architecture        = "X86_64"

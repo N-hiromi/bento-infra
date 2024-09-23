@@ -46,7 +46,7 @@ resource "aws_iam_role_policy_attachment" "sns_worker" {
 
 resource "aws_iam_role_policy_attachment" "sqs_worker" {
   role       = aws_iam_role.ecs_task_role_worker.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
 
 resource "aws_iam_role_policy_attachment" "secret_manager" {
