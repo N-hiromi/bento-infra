@@ -22,25 +22,25 @@ resource "aws_wafv2_web_acl" "this" {
     allow {}
   }
 
-#   rule {
-#     name     = "allow-ip"
-#     priority = 1
-#
-#     action {
-#       allow {}
-#     }
-#
-#     statement {
-#       ip_set_reference_statement {
-#         arn = aws_wafv2_ip_set.developers-ips.arn
-#       }
-#     }
-#     visibility_config {
-#       cloudwatch_metrics_enabled = false
-#       metric_name                = "${local.project_key}-allow-ip"
-#       sampled_requests_enabled   = false
-#     }
-#   }
+  #   rule {
+  #     name     = "allow-ip"
+  #     priority = 1
+  #
+  #     action {
+  #       allow {}
+  #     }
+  #
+  #     statement {
+  #       ip_set_reference_statement {
+  #         arn = aws_wafv2_ip_set.developers-ips.arn
+  #       }
+  #     }
+  #     visibility_config {
+  #       cloudwatch_metrics_enabled = false
+  #       metric_name                = "${local.project_key}-allow-ip"
+  #       sampled_requests_enabled   = false
+  #     }
+  #   }
 
   rule {
     name     = "AWS-AWSManagedRulesAmazonIpReputationList"

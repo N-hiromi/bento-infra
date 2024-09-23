@@ -16,24 +16,14 @@ resource "aws_ecs_cluster_capacity_providers" "cluster_capacity_providers" {
     "FARGATE_SPOT",
   ]
 
-#   default_capacity_provider_strategy {
-#     capacity_provider = "FARGATE"
-#     weight            = 1
-#   }
-// TODO 一旦100%FARGATE_SPOTにしておく
+  #   default_capacity_provider_strategy {
+  #     capacity_provider = "FARGATE"
+  #     weight            = 1
+  #   }
+  // TODO 一旦100%FARGATE_SPOTにしておく
   default_capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
     weight            = 1
-  }
-}
-
-resource "aws_ecs_capacity_provider" "ec2" {
-  name = "${local.project_key}-capacity-provider"
-  auto_scaling_group_provider {
-    auto_scaling_group_arn = aws_autoscaling_group.ai.arn
-    managed_scaling {
-      status = "ENABLED"
-    }
   }
 }
 

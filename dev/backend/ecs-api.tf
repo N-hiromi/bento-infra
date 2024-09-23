@@ -85,7 +85,7 @@ resource "aws_ecs_task_definition" "api" {
   memory                   = 512
 
   runtime_platform {
-    cpu_architecture = "X86_64"
+    cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }
 
@@ -93,14 +93,14 @@ resource "aws_ecs_task_definition" "api" {
     {
       name = "${local.project_key}-api"
       //      image     = "httpd"
-      image     = "${aws_ecr_repository.api.repository_url}:latest"
+      image = "${aws_ecr_repository.api.repository_url}:latest"
 
       essential = true
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group = "/ecs/${local.project_key}-api",
-          awslogs-region = "ap-northeast-1",
+          awslogs-group         = "/ecs/${local.project_key}-api",
+          awslogs-region        = "ap-northeast-1",
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -113,14 +113,14 @@ resource "aws_ecs_task_definition" "api" {
       ]
 
       environment = [
-        { "name": "ENV", "value": "dev" }
+        { "name" : "ENV", "value" : "dev" }
       ]
 
       healthCheck = {
-        command = ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+        command  = ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
         interval = 30
-        timeout = 5
-        retries = 3
+        timeout  = 5
+        retries  = 3
       }
     }
   ])
@@ -151,8 +151,8 @@ resource "aws_ecs_service" "api" {
   // サービスが停止したらアラームを通知する。ロールバックもする
   alarms {
     alarm_names = ["${local.project_key}-ai-service"]
-    enable   = true
-    rollback = true
+    enable      = true
+    rollback    = true
   }
 
   load_balancer {
@@ -161,9 +161,9 @@ resource "aws_ecs_service" "api" {
     container_port   = 8080
   }
 
-# fargate_spotを使用する設定
+  # fargate_spotを使用する設定
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
-    weight = 1
+    weight            = 1
   }
 }

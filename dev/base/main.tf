@@ -4,31 +4,31 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
 
 ################# vpc #################
 module "vpc" {
-  version = "~> 5.0"
-  source                = "terraform-aws-modules/vpc/aws"
-  name                  = local.project_key
-  cidr                  = "10.0.0.0/16"
-  public_subnets        = ["10.0.96.0/19", "10.0.128.0/19"] # "10.0.160.0/19"
+  version                 = "~> 5.0"
+  source                  = "terraform-aws-modules/vpc/aws"
+  name                    = local.project_key
+  cidr                    = "10.0.0.0/16"
+  public_subnets          = ["10.0.96.0/19", "10.0.128.0/19"] # "10.0.160.0/19"
   map_public_ip_on_launch = true
-  enable_nat_gateway    = false
-  single_nat_gateway    = false
-  reuse_nat_ips         = true
-  azs                   = ["apne1-az1", "apne1-az2"] # "apne1-az4"
-  public_subnet_suffix  = "public-subnet"
+  enable_nat_gateway      = false
+  single_nat_gateway      = false
+  reuse_nat_ips           = true
+  azs                     = ["apne1-az1", "apne1-az2"] # "apne1-az4"
+  public_subnet_suffix    = "public-subnet"
 }
 
 ################# security-groups #################
 module "alb-sg" {
   version = "5.1.2"
-  source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-alb-sg"
-  vpc_id = module.vpc.vpc_id
+  source  = "terraform-aws-modules/security-group/aws"
+  name    = "${local.project_key}-alb-sg"
+  vpc_id  = module.vpc.vpc_id
   ingress_with_cidr_blocks = [{
     description = "Allow ingress on port 8080 from 0.0.0.0/0"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-#     cidr_blocks = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks[0]
+    #     cidr_blocks = data.aws_ip_ranges.ap_northeast_cloudfront.cidr_blocks[0]
     prefix_list_ids = data.aws_ec2_managed_prefix_list.cloudfront.id
   }]
   egress_with_cidr_blocks = [{
@@ -42,18 +42,18 @@ module "alb-sg" {
 resource "aws_vpc_security_group_ingress_rule" "allow_custom_header_ingress" {
   from_port         = 8080
   to_port           = 8080
-  ip_protocol = "tcp"
-  prefix_list_id = data.aws_ec2_managed_prefix_list.cloudfront.id
+  ip_protocol       = "tcp"
+  prefix_list_id    = data.aws_ec2_managed_prefix_list.cloudfront.id
   security_group_id = module.alb-sg.security_group_id
   description       = "Allow ingress on port 8080 with custom header"
 }
 
 module "api-sg" {
   version = "5.1.2"
-  source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-api-sg"
-  vpc_id = module.vpc.vpc_id
-#   albからのアクセスを許可
+  source  = "terraform-aws-modules/security-group/aws"
+  name    = "${local.project_key}-api-sg"
+  vpc_id  = module.vpc.vpc_id
+  #   albからのアクセスを許可
   ingress_with_source_security_group_id = [
     {
       description              = "from alb"
@@ -75,9 +75,9 @@ module "api-sg" {
 
 module "batch-sg" {
   version = "5.1.2"
-  source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-batch-sg"
-  vpc_id = module.vpc.vpc_id
+  source  = "terraform-aws-modules/security-group/aws"
+  name    = "${local.project_key}-batch-sg"
+  vpc_id  = module.vpc.vpc_id
   egress_with_cidr_blocks = [{
     description = "to all"
     from_port   = 0
@@ -89,9 +89,9 @@ module "batch-sg" {
 
 module "worker-sg" {
   version = "5.1.2"
-  source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-worker-sg"
-  vpc_id = module.vpc.vpc_id
+  source  = "terraform-aws-modules/security-group/aws"
+  name    = "${local.project_key}-worker-sg"
+  vpc_id  = module.vpc.vpc_id
   egress_with_cidr_blocks = [{
     description = "to all"
     from_port   = 0
@@ -103,9 +103,9 @@ module "worker-sg" {
 
 module "ai-sg" {
   version = "5.1.2"
-  source = "terraform-aws-modules/security-group/aws"
-  name   = "${local.project_key}-ai-sg"
-  vpc_id = module.vpc.vpc_id
+  source  = "terraform-aws-modules/security-group/aws"
+  name    = "${local.project_key}-ai-sg"
+  vpc_id  = module.vpc.vpc_id
   egress_with_cidr_blocks = [{
     description = "to all"
     from_port   = 0
@@ -115,10 +115,10 @@ module "ai-sg" {
   }]
   // TODO debug用。ssh接続許可
   ingress_with_cidr_blocks = [{
-      description = "allow ssh access"
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_blocks = "0.0.0.0/0"
+    description = "allow ssh access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = "0.0.0.0/0"
   }]
 }
