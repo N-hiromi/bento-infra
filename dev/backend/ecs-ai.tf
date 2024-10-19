@@ -172,8 +172,8 @@ resource "aws_ecs_task_definition" "ai" {
   network_mode             = "bridge"
   task_role_arn            = aws_iam_role.ecs_task_role_ai.arn
   requires_compatibilities = ["EC2"]
-  cpu                      = 2000
-  memory                   = 6000
+  cpu                      = 3000
+  memory                   = 14000
 
   runtime_platform {
     cpu_architecture        = "X86_64"
@@ -219,22 +219,17 @@ resource "aws_ecs_service" "ai" {
   #   更新されたコンテナイメージをタスクに使用する場合は、ECSの新しいデプロイを強制する
   force_new_deployment = true
 
+  // メモリを最大限割り当てるので、デプロイ時は手動で他のタスクを停止してリソースを取りあわないようにする。
   // deployに失敗したらロールバックする
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
+  # deployment_circuit_breaker {
+  #   enable   = true
+  #   rollback = true
+  # }
 
   // サービスが停止したらアラームを通知する。ロールバックもする
-  alarms {
-    alarm_names = ["${local.project_key}-ai-service"]
-    enable      = true
-    rollback    = true
-  }
-
-  // awsvpcの場合、セキュリティグループとサブネットを指定する
-  # network_configuration {
-  #   subnets         = data.aws_subnets.public_subnets.ids
-  #   security_groups = [data.aws_security_group.ai_sg.id]
+  # alarms {
+  #   alarm_names = ["${local.project_key}-ai-service"]
+  #   enable      = true
+  #   rollback    = true
   # }
 }
