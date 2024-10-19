@@ -16,6 +16,10 @@ data "aws_subnets" "public_subnets" {
   }
 }
 
-# data "aws_iam_role" "cognito_identity_role" {
-#   name = "nnaabbee_tidy_sample_id_pool_role"
-# }
+data "aws_iam_role" "identity_pool_role" {
+  name = "${local.project_key}-identity-pool-role"
+}
+
+data "aws_sqs_queue" "target_video_queue" {
+  name = "${local.project_key}-target-video-queue"
+}

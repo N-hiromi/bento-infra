@@ -1,3 +1,10 @@
+# apply時にclient_secretを渡すこと
+variable "client_secret" {
+  description = "googleのclient_secret"
+  type        = string
+}
+
+# user-pool ------------------------------
 resource "aws_cognito_user_pool" "user_pool" {
   name = local.project_key
 
@@ -12,13 +19,36 @@ resource "aws_cognito_user_pool" "user_pool" {
     allow_admin_create_user_only = false
   }
   #   ユーザプールの削除を保護するかどうか
-  deletion_protection = "ACTIVE"
+  #   TODO 検証が終わったらactiveにすること
+  #   deletion_protection = "ACTIVE"
 
   #   本人確認はメールで行う
   auto_verified_attributes = ["email"]
 
-  #   サインイン必須属性
-  alias_attributes = ["preferred_username", "email"]
+  #   ユーザ名の属性
+  username_attributes = ["email"]
+
+  #   ユーザプールの属性
+  #   custom属性のusername。defaultのusernameはemailを指す
+  schema {
+    attribute_data_type = "String"
+    name                = "username"
+    required            = false
+    mutable             = false
+  }
+  schema {
+    attribute_data_type = "String"
+    name                = "email"
+    #     ログインに使うのでtrue
+    required = true
+    #     変更可能かどうか
+    mutable = true
+  }
+
+  #   属性を更新する際に確認を行う
+  user_attribute_update_settings {
+    attributes_require_verification_before_update = ["email"]
+  }
 
   email_configuration {
     #     TODO 開発中は一旦cognitoから送信するようにする。
@@ -66,66 +96,146 @@ resource "aws_cognito_user_pool_client" "client" {
   refresh_token_validity = 1
 
   #   他のサービスの認証を使う機能
-  #   TODO 項目が決まり次第修正する
-  callback_urls = ["https://example.com"]
+  callback_urls = [
+    "https://tidy-ai.com/home"
+  ]
   #   ログイン後のリダイレクト先。
-  default_redirect_uri = "https://example.com"
+  default_redirect_uri = "https://tidy-ai.com/home"
   #   ログアウト後のリダイレクト先
-  logout_urls = ["https://example.com"]
+  logout_urls = ["https://tidy-ai.com/welcome"]
   #   OAUTHを使うならtrue
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code", "implicit"]
-  allowed_oauth_scopes                 = ["email", "openid"]
-  #   supported_identity_providers         = ["COGNITO", "Google", "SignInWithApple"]
-  # TODO googleとappleは手動でコンソールから設定する
-  supported_identity_providers = ["COGNITO"]
+  allowed_oauth_scopes                 = ["email", "openid", "profile", "aws.cognito.signin.user.admin"]
+
+  # クライアントの認証フロー
+  explicit_auth_flows = [
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_CUSTOM_AUTH",
+  ]
+
+  supported_identity_providers = [
+    "COGNITO",
+    aws_cognito_identity_provider.google.provider_name,
+    aws_cognito_identity_provider.apple.provider_name
+  ]
+}
+
+# cognitoドメインを追加
+resource "aws_cognito_user_pool_domain" "domain" {
+  domain       = "${local.project_key}-domain"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
 # 他サービス認証ごとの設定
 // google ------------------------------
-resource "aws_cognito_user_group" "google" {
-  name         = "${local.project_key}-google-user-group"
-  user_pool_id = aws_cognito_user_pool.user_pool.id
-  description  = "google認証ユーザ"
+resource "aws_cognito_identity_provider" "google" {
+  user_pool_id  = aws_cognito_user_pool.user_pool.id
+  provider_name = "Google"
+  provider_type = "Google"
+  provider_details = {
+    authorize_scopes = "email profile openid"
+    client_id        = "787531189460-ea6i9ng14q6cbg6oipfh6plr9m2i7bjv.apps.googleusercontent.com"
+    // client_secretはapply時に渡す
+    client_secret = var.client_secret
+  }
+  attribute_mapping = {
+    email    = "email"
+    username = "sub"
+  }
 }
-
-# TODO googleの設定はこれは手動でコンソールからやる
-# resource "aws_cognito_identity_provider" "google" {
-#   user_pool_id  = aws_cognito_user_pool.user_pool.id
-#   provider_name = "Google"
-#   provider_type = "Google"
-#   provider_details = {
-#     authorize_scopes = "email profile openid"
-#     client_id        = ""
-#     client_secret    = ""
-#   }
-#   attribute_mapping = {
-#     email    = "email"
-#     preferred_username = "name"
-#   }
-# }
 
 // apple ------------------------------
-resource "aws_cognito_user_group" "apple" {
-  name         = "${local.project_key}-apple-user-group"
-  user_pool_id = aws_cognito_user_pool.user_pool.id
-  description  = "apple認証ユーザ"
+resource "aws_cognito_identity_provider" "apple" {
+  user_pool_id  = aws_cognito_user_pool.user_pool.id
+  provider_name = "SignInWithApple"
+  provider_type = "SignInWithApple"
+  provider_details = {
+    authorize_scopes = "email"
+    client_id        = "jp.tidy-inc.dev.HeeT5Vzr"
+    // 秘密鍵はプロジェクトの外に置く
+    private_key = file("../../../apple-secrets/dev/AuthKey_64CKLTH35R.p8")
+    key_id      = "64CKLTH35R"
+    team_id     = "3BGQQ43LNL"
+  }
+  attribute_mapping = {
+    email    = "email"
+    username = "sub"
+  }
 }
 
-//TODO appleの設定はこれは手動でコンソールからやる
-# resource "aws_cognito_identity_provider" "apple" {
-#   user_pool_id  = aws_cognito_user_pool.user_pool.id
-#   provider_name = "SignInWithApple"
-#   provider_type = "SignInWithApple"
-#   provider_details = {
-#     authorize_scopes = "email"
-#     client_id        = ""
-#     private_key      = ""
-#     key_id           = ""
-#     team_id          = ""
-#   }
-#   attribute_mapping = {
-#     email    = "email"
-#     preferred_username = "sub"
-#   }
-# }
+# -----------idプール-------------------
+# Idプールを使うのに必要な最低限のiamロール
+resource "aws_iam_role" "identity_pool_role" {
+  name = "${local.project_key}-identity-pool-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Federated = "cognito-identity.amazonaws.com"
+        }
+        Condition = {
+          StringEquals = {
+            "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.main.id
+          },
+          "ForAnyValue:StringLike" = {
+            "cognito-identity.amazonaws.com:amr" = "authenticated"
+          }
+        }
+      },
+    ]
+  })
+}
+
+# GetCredentialsForIdentityを含むawsのロールがなかったのでポリシーをアタッチする
+resource "aws_iam_policy" "identity_pool_policy" {
+  name = "${local.project_key}-get-credentials-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "cognito-identity:GetCredentialsForIdentity"
+        Effect = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+# iamロールへポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "identity_pool_policy" {
+  role       = aws_iam_role.identity_pool_role.name
+  policy_arn = aws_iam_policy.identity_pool_policy.arn
+}
+
+# idプールにロールをアタッチ
+resource "aws_cognito_identity_pool_roles_attachment" "main" {
+  identity_pool_id = aws_cognito_identity_pool.main.id
+  roles = {
+    "authenticated" = aws_iam_role.identity_pool_role.arn
+  }
+}
+
+resource "aws_cognito_identity_pool" "main" {
+  identity_pool_name               = "${local.project_key}-identity-pool"
+  allow_unauthenticated_identities = false
+
+  cognito_identity_providers {
+    client_id               = aws_cognito_user_pool_client.client.id
+    provider_name           = aws_cognito_user_pool.user_pool.endpoint
+    server_side_token_check = false
+  }
+
+  supported_login_providers = {
+    "apple.com"           = aws_cognito_identity_provider.apple.provider_name
+    "accounts.google.com" = aws_cognito_identity_provider.google.provider_name
+  }
+}

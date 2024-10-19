@@ -55,3 +55,7 @@ data "aws_subnets" "public_subnets" {
 data "aws_key_pair" "key" {
   key_name = local.project_key
 }
+
+data "aws_s3_bucket" "target_video_bucket" {
+  bucket = "${local.project_key}-target-video-bucket"
+}

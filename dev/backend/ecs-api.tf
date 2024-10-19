@@ -67,6 +67,11 @@ resource "aws_iam_role_policy_attachment" "secret_manager_api" {
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 }
 
+resource "aws_iam_role_policy_attachment" "sns_api" {
+  role       = aws_iam_role.ecs_task_role_api.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
+}
+
 ################# ecs #################
 module "log_group_api" {
   version           = "5.4.0"

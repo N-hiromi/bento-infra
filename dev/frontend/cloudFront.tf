@@ -38,6 +38,8 @@ resource "aws_cloudfront_distribution" "alb_distribution" {
       cookies {
         forward = "none"
       }
+
+      headers = ["Authorization"]
     }
   }
 

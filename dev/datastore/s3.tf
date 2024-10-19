@@ -18,42 +18,56 @@ resource "aws_s3_bucket" "learning_data_bucket" {
 }
 
 # -------------------------バケットポリシー-------------------------
-# resource "aws_s3_bucket_policy" "target_video_bucket_policy" {
-#   bucket = aws_s3_bucket.target_video_bucket.bucket
-#
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow",
-#         Principal = {
-#           "AWS": "arn:aws:sts::166448729741:assumed-role/nnaabbee_tidy_sample_id_pool_role/CognitoIdentityCredentials"
-#         },
-#         Action = [
-#           "s3:PutObject"
-#         ],
-#         Resource = format("${aws_s3_bucket.target_video_bucket.arn}/cognito/accounts/%s/*", "cognito-identity.amazonaws.com:sub")
-#       }
-#     ]
-#   })
-# }
-#
-# resource "aws_s3_bucket_policy" "result_video_bucket_policy" {
-#   bucket = aws_s3_bucket.result_video_bucket.bucket
-#
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow",
-#         Principal = {
-#           "AWS": "arn:aws:sts::166448729741:assumed-role/nnaabbee_tidy_sample_id_pool_role/CognitoIdentityCredentials"
-#         },
-#         Action = [
-#           "s3:GetObject"
-#         ],
-#         Resource = format("${aws_s3_bucket.result_video_bucket.arn}/cognito/accounts/%s/*", "cognito-identity.amazonaws.com:sub")
-#       }
-#     ]
-#   })
-# }
+// 顧客が特定のパスに動画をアップロードできるようにするポリシー
+resource "aws_s3_bucket_policy" "target_video_bucket_policy" {
+  bucket = aws_s3_bucket.target_video_bucket.bucket
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          "AWS": data.aws_iam_role.identity_pool_role.arn
+        },
+        Action = [
+          "s3:PutObject"
+        ],
+        Resource = "${aws_s3_bucket.target_video_bucket.arn}/upload/$${cognito-identity.amazonaws.com:sub}/*"
+      }
+    ]
+  })
+}
+
+// 解析後動画を特定のパスから取得できるようにするポリシー
+resource "aws_s3_bucket_policy" "result_video_bucket_policy" {
+  bucket = aws_s3_bucket.result_video_bucket.bucket
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          "AWS": data.aws_iam_role.identity_pool_role.arn
+        },
+        Action = [
+          "s3:GetObject"
+        ],
+        Resource = "${aws_s3_bucket.result_video_bucket.arn}/upload/$${cognito-identity.amazonaws.com:sub}/*"
+      }
+    ]
+  })
+}
+
+// -------------------------バケットイベント通知-------------------------
+// 顧客が動画をアップロードした際に、sqsへ通知する
+resource "aws_s3_bucket_notification" "target_video_bucket_notification" {
+  bucket = aws_s3_bucket.target_video_bucket.bucket
+
+  queue {
+    queue_arn     = data.aws_sqs_queue.target_video_queue.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_prefix = "upload/"
+  }
+}

@@ -126,19 +126,26 @@ resource "aws_launch_template" "ai" {
     market_type = "spot" # スポットインスタンスを指定
   }
 
-#   block_device_mappings {
-#     device_name = "/dev/xvda"
-#
-#     ebs {
-#       volume_size = 100
-#       volume_type = "gp3"
-#     }
-#   }
+  // /dev/rootが一杯になるので拡張するためEBSボリュームを追加。df -hで確認できる
+  // lsblkでデバイス一覧を確認できる。
+  // sudo growpart /dev/nvme0n1 1 -> nvme0n1を増やして、その1番目のパーテーションを拡張する
+  // sudo resize2fs /dev/root -> /dev/rootを拡張する
+  block_device_mappings {
+    device_name = "/dev/sda1"
 
+    ebs {
+      volume_size = 250
+      volume_type = "gp3"
+    }
+  }
+
+  // EBSボリュームのサイズを変更するためのスクリプトを実行
   // EC2インスタンス起動時にECSクラスタへインスタンスを登録するためにクラスタを指定
   // エージェントを起動する
   user_data = base64encode(<<-EOF
               #!/bin/bash
+              sudo growpart /dev/nvme0n1 1
+              sudo resize2fs /dev/root
               nvidia-smi
               echo "ECS_CLUSTER=${aws_ecs_cluster.cluster.name}" >> /etc/ecs/ecs.config
               sudo systemctl restart ecs
@@ -161,7 +168,8 @@ resource "aws_launch_template" "ai" {
 resource "aws_ecs_task_definition" "ai" {
   family                   = "${local.project_key}-ai-family"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  network_mode             = "awsvpc"
+  // EC2をパブリックで使う場合awsvpcを指定しない。public_ipが自動で付与されないから。
+  network_mode             = "bridge"
   task_role_arn            = aws_iam_role.ecs_task_role_ai.arn
   requires_compatibilities = ["EC2"]
   cpu                      = 2000
@@ -224,8 +232,9 @@ resource "aws_ecs_service" "ai" {
     rollback    = true
   }
 
-  network_configuration {
-    subnets         = data.aws_subnets.public_subnets.ids
-    security_groups = [data.aws_security_group.ai_sg.id]
-  }
+  // awsvpcの場合、セキュリティグループとサブネットを指定する
+  # network_configuration {
+  #   subnets         = data.aws_subnets.public_subnets.ids
+  #   security_groups = [data.aws_security_group.ai_sg.id]
+  # }
 }
