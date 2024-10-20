@@ -114,7 +114,7 @@ resource "aws_autoscaling_group" "ai" {
 resource "aws_launch_template" "ai" {
   name_prefix   = "${local.project_key}-ai-lc"
   image_id      = "ami-09b8ca242863d5977"
-  instance_type = "g4dn.xlarge"
+  instance_type = "g4dn.2xlarge"
   key_name      = data.aws_key_pair.key.key_name
 
   # コンテナインスタンスへのIAMロールを指定
@@ -172,8 +172,8 @@ resource "aws_ecs_task_definition" "ai" {
   network_mode             = "bridge"
   task_role_arn            = aws_iam_role.ecs_task_role_ai.arn
   requires_compatibilities = ["EC2"]
-  cpu                      = 3000
-  memory                   = 14000
+  cpu                      = 7000
+  memory                   = 30000
 
   runtime_platform {
     cpu_architecture        = "X86_64"
