@@ -1,6 +1,6 @@
 resource "aws_cloudfront_distribution" "alb_distribution" {
   # ドメイン名を設定
-  aliases = ["tidy-ai.com"]
+  # aliases = ["tidy-ai.com"]
 
   origin {
     domain_name = data.aws_lb.app.dns_name
@@ -43,7 +43,6 @@ resource "aws_cloudfront_distribution" "alb_distribution" {
     }
   }
 
-  // TODO wafが小松さん家からしかアクセスできないようにしているので、コメントアウト。今後絞る予定ある?
   web_acl_id      = aws_wafv2_web_acl.this.arn
   enabled         = true
   is_ipv6_enabled = true

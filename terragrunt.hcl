@@ -1,10 +1,10 @@
 remote_state {
   backend = "s3"
   config = {
-    bucket = "tidy-tfstates"
+    bucket = "bento-tfstates"
     key = "${path_relative_to_include()}.tfstate"
     region = "ap-northeast-1"
-    profile = "tidy"
+    profile = "default"
     encrypt = true
   }
 }
@@ -25,16 +25,16 @@ terraform {
 }
 provider "aws" {
   region = "ap-northeast-1"
-  profile = "tidy"
+  profile = "default"
 }
 provider "aws" {
     alias = "virginia"
     region = "us-east-1"
-    profile = "tidy"
+    profile = "default"
 }
 locals {
-  project_name = "tidy"
-  project_key = "${dirname(path_relative_to_include())}-tidy"
+  project_name = "bento"
+  project_key = "${dirname(path_relative_to_include())}-bento"
 }
 EOF
 }

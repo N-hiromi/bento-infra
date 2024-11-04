@@ -19,7 +19,3 @@ data "aws_subnets" "public_subnets" {
 data "aws_iam_role" "identity_pool_role" {
   name = "${local.project_key}-identity-pool-role"
 }
-
-data "aws_sqs_queue" "target_video_queue" {
-  name = "${local.project_key}-target-video-queue"
-}

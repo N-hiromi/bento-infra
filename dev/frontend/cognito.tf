@@ -115,55 +115,12 @@ resource "aws_cognito_user_pool_client" "client" {
     "ALLOW_USER_SRP_AUTH",
     "ALLOW_CUSTOM_AUTH",
   ]
-
-  supported_identity_providers = [
-    "COGNITO",
-    aws_cognito_identity_provider.google.provider_name,
-    aws_cognito_identity_provider.apple.provider_name
-  ]
 }
 
 # cognitoドメインを追加
 resource "aws_cognito_user_pool_domain" "domain" {
   domain       = "${local.project_key}-domain"
   user_pool_id = aws_cognito_user_pool.user_pool.id
-}
-
-# 他サービス認証ごとの設定
-// google ------------------------------
-resource "aws_cognito_identity_provider" "google" {
-  user_pool_id  = aws_cognito_user_pool.user_pool.id
-  provider_name = "Google"
-  provider_type = "Google"
-  provider_details = {
-    authorize_scopes = "email profile openid"
-    client_id        = "787531189460-ea6i9ng14q6cbg6oipfh6plr9m2i7bjv.apps.googleusercontent.com"
-    // client_secretはapply時に渡す
-    client_secret = var.client_secret
-  }
-  attribute_mapping = {
-    email    = "email"
-    username = "sub"
-  }
-}
-
-// apple ------------------------------
-resource "aws_cognito_identity_provider" "apple" {
-  user_pool_id  = aws_cognito_user_pool.user_pool.id
-  provider_name = "SignInWithApple"
-  provider_type = "SignInWithApple"
-  provider_details = {
-    authorize_scopes = "email"
-    client_id        = "jp.tidy-inc.dev.HeeT5Vzr"
-    // 秘密鍵はプロジェクトの外に置く
-    private_key = file("../../../apple-secrets/dev/AuthKey_64CKLTH35R.p8")
-    key_id      = "64CKLTH35R"
-    team_id     = "3BGQQ43LNL"
-  }
-  attribute_mapping = {
-    email    = "email"
-    username = "sub"
-  }
 }
 
 # -----------idプール-------------------
@@ -232,10 +189,5 @@ resource "aws_cognito_identity_pool" "main" {
     client_id               = aws_cognito_user_pool_client.client.id
     provider_name           = aws_cognito_user_pool.user_pool.endpoint
     server_side_token_check = false
-  }
-
-  supported_login_providers = {
-    "apple.com"           = aws_cognito_identity_provider.apple.provider_name
-    "accounts.google.com" = aws_cognito_identity_provider.google.provider_name
   }
 }
